@@ -1,41 +1,86 @@
-1. MySQL Indexing for MySQL 5.6
-2. -
-3. www.percona.com You’ve Made a Great Choice ! Understanding indexing is crucial both for Developers and DBAs Poor index choices are responsible for large portion of production problems Indexing is not a rocket science
-4. www.percona.com MySQL Indexing: Agenda Understanding Indexing Setting up best indexes for your applications Working around common MySQL limitations
-5. www.percona.com Indexing in the Nutshell • Speed up access in the database • Help to enforce constraints (UNIQUE, FOREIGN KEY) • Queries can be ran without any indexes • But it can take a really long time What are indexes for ?
-6. Types of Indexes you might heard about • Majority of indexes you deal in MySQL is this type BTREE Indexes www.percona.com RTREE Indexes • MyISAM only, for GIS HASH Indexes • MEMORY, NDB FULLTEXT Indexes • MyISAM, Innodb starting 5.6
-7. www.percona.com Family of BTREE like Indexes • Share same properties in what operations they can speed up • Memory vs Disk is life changer A lot of different implementations • Data stored in leaf nodes B+ Trees are typically used for Disk storage • But physically a lot different TokuDB Fractal Trees are logically similar
-8. www.percona.com B+Tree Example Branch/Root Node Less than 3 Data Pointers Leaf Node
-9. www.percona.com Indexes in MyISAM vs Innodb In MyISAM data pointers point to physical offset in the data file • All indexes are essentially equivalent In Innodb • PRIMARY KEY (Explicit or Implicit) - stores data in the leaf pages of the index, not pointer • Secondary Indexes – store primary key as data pointer
-10. What Operations can BTREE Index do ? Find all rows with KEY=5 (point lookup) www.percona.com Find all rows with KEY>5 (open range) Find all rows with 5<KEY<10 (closed range) NOT find all rows with last digit of the KEY is Zero • This can’t be defined as a “range” operation
-11. www.percona.com String Indexes • Sort order is defined for strings (collation) • “AAAA” < “AAAB” There is no difference… really • LIKE “ABC%” means • “ABC[LOWEST]”<KEY<“ABC[HIGHEST]” • LIKE “%ABC” can’t be optimized by use of the index Prefix LIKE is a special type of Range
-12. www.percona.com Multiple Column Indexes •KEY(col1,col2,col3) •(1,2,3) < (1,3,1) Sort Order is defined, comparing leading column, then second etc •not a separate BTREE index for each level It is still one BTREE Index
-13. www.percona.com Overhead of The Indexing Indexes are costly; Do not add more than you need • In most cases extending index is better than adding new one Writes - Updating indexes is often major cost of database writes Reads - Wasted space on disk and in memory; additional overhead during query optimization
-14. www.percona.com Indexing Innodb Tables • Pick PRIMARY KEY what suites you best • For comments – (POST_ID,COMMENT_ID) can be good PRIMARY KEY storing all comments for single post close together • Alternatively “pack” to single BIGINT Data is clustered by Primary Key • KEY (A) is really KEY (A,ID) internally • Useful for sorting, Covering Index. PRIMARY KEY is implicitly appended to all indexes
-15. www.percona.com How MySQL Uses Indexes Data Lookups Sorting Avoiding reading “data” Special Optimizations
-16. www.percona.com Using Indexes for Data Lookups • The classical use of index on (LAST_NAME) SELECT * FROM EMPLOYEES WHERE LAST_NAME=“Smith” • SELECT * FROM EMPLOYEES WHERE LAST_NAME=“Smith” AND DEPT=“Accounting” • Will use index on (DEPT,LAST_NAME) Can use Multiple column indexes
-17. www.percona.com It Gets Tricky With Multiple Columns Index (A,B,C) •- order of columns matters •A>5 •A=5 AND B>6 •A=5 AND B=6 AND C=7 •A=5 AND B IN (2,3) AND C>5 Will use Index for lookup (all listed keyparts) •B>5 – Leading column is not referenced •B=6 AND C=7 - Leading column is not referenced Will NOT use Index •A>5 AND B=2 - range on first column; only use this key part •A=5 AND B>6 AND C=2 - range on second column, use 2 parts Will use Part of the index
-18. www.percona.com The First Rule of MySQL Optimizer MySQL will stop using key parts in multi part index as soon as it met the real range (<,>, BETWEEN), it however is able to continue using key parts further to the right if IN(…) range is used
-19. www.percona.com Using Index for Sorting • Will use index on SCORE column • Without index MySQL will do “filesort” (external sort) which is very expensive SELECT * FROM PLAYERS ORDER BY SCORE DESC LIMIT 10 • SELECT * FROM PLAYERS WHERE COUNTRY=“US” ORDER BY SCORE DESC LIMIT 10 • Best served by Index on (COUNTRY,SCORE) Often Combined with using Index for lookup
-20. Multi Column indexes for efficient sorting www.percona.com • It becomes even more restricted! • KEY(A,B) • Will use Index for Sorting – ORDER BY A - sorting by leading column – A=5 ORDER BY B - EQ filtering by 1st and sorting by 2nd – ORDER BY A DESC, B DESC - Sorting by 2 columns in same order – A>5 ORDER BY A - Range on the column, sorting on the same • Will NOT use Index for Sorting – ORDER BY B - Sorting by second column in the index – A>5 ORDER BY B – Range on first column, sorting by second – A IN(1,2) ORDER BY B - In-Range on first column – ORDER BY A ASC, B DESC - Sorting in the different order
-21. www.percona.com MySQL Using Index for Sorting Rules You can’t sort in different order by 2 columns You can only have Equality comparison (=) for columns which are not part of ORDER BY • Not even IN() works in this case
-22. www.percona.com Avoiding Reading The data • Applies to index use for specific query, not type of index. “Covering Index” • Index is typically smaller than data Reading Index ONLY and not accessing the “data” • KEY(CUSTOMER_ID,STATUS) SELECT STATUS FROM ORDERS WHERE CUSTOMER_ID=123 • Access through data pointers is often quite “random” Access is a lot more sequential
-23. www.percona.com Min/Max Optimizations • Index help MIN()/MAX() aggregate functions – But only these • SELECT MAX(ID) FROM TBL; • SELECT MAX(SALARY) FROM EMPLOYEE GROUP BY DEPT_ID – Will benefit from (DEPT_ID,SALARY) index – “Using index for group-by”
-24. www.percona.com Indexes and Joins • SELECT * FROM POSTS,COMMENTS WHERE AUTHOR=“Peter” AND COMMENTS.POST_ID=POSTS.ID • Scan table POSTS finding all posts which have Peter as an Author • For every such post go to COMMENTS table to fetch all comments MySQL Performs Joins as “Nested Loops” • The index on POSTS.ID is not needed for this query performance Index is only needed on table which is being looked up • Re-Design JOIN queries which can’t be well indexed Very important to have all JOINs Indexed
-25. www.percona.com Using Multiple Indexes for the table • “Index Merge” MySQL Can use More than one index • Can often use Indexes on (A) and (B) separately • Index on (A,B) is much better SELECT * FROM TBL WHERE A=5 AND B=6 • 2 separate indexes is as good as it gets • Index (A,B) can’t be used for this query SELECT * FROM TBL WHERE A=5 OR B=6
-26. www.percona.com Prefix Indexes • ALTER TABLE TITLE ADD KEY(TITLE(20)); • Needed to index BLOB/TEXT columns • Can be significantly smaller • Can’t be used as covering index • Choosing prefix length becomes the question You can build Index on the leftmost prefix of the column
-27. www.percona.com Choosing Prefix Length • Prefix should be “Selective enough” – Check number of distinct prefixes vs number of total distinct values mysql> select count(distinct(title)) total, count(distinct(left(title,10))) p10, count(distinct(left(title,20))) p20 from title; +--------+--------+--------+ | total | p10 | p20 | +--------+--------+--------+ | 998335 | 624949 | 960894 | +--------+--------+--------+ 1 row in set (44.19 sec)
-28. Most common Titles Most Common Title Prefixes www.percona.com Choosing Prefix Length • Check for Outliers – Ensure there are not too many rows sharing the same prefix mysql> select count(*) cnt, title tl from title group by tl order by cnt desc limit 3; +-----+-----------------+ | cnt | tl | +-----+-----------------+ | 136 | The Wedding | | 129 | Lost and Found | | 112 | Horror Marathon | +-----+-----------------+ 3 rows in set (27.49 sec) mysql> select count(*) cnt, left(title,20) tl from title group by tl order by cnt desc limit 3; +-----+----------------------+ | cnt | tl | +-----+----------------------+ | 184 | Wetten, dass..? aus | | 136 | The Wedding | | 129 | Lost and Found | +-----+----------------------+ 3 rows in set (33.23 sec)
-29. www.percona.com What is new with MySQL 5.6 ? • Most of them will make your queries better automatically • join_buffer_size variable has whole new meaning • Values if 32MB+ can make sense Many Optimizer improvements • Most important one: ICP (Index Condition Pushdown) Focus on Index Design Practices for this presentation
-30. www.percona.com Understanding ICP • Think NAME LIKE “%ill%” (will not convert to range) Push where clause “Conditions” for Storage engine to filter • Plus filtering done on the engine level – efficient “Much more flexible covering Index” • All or none. All is resolved through the index or “row” is read if within range Before MySQL 5.5
-31. www.percona.com ICP Examples • SELECT A … WHERE B=2 AND C LIKE “%ill%’ – MySQL 5.5 and below • KEY (B) – Traditional. Using index for range only • KEY (B,C,A) - Covering. All involved columns included – MySQL 5.6 • KEY(B,C) – Range access by B; Filter clause on C only read full row if match • More cases – SELECT * …WHERE A=5 and C=6 ; KEY (A,B,C) • Will scan all index entries with A=5 not all rows
-32. How MySQL Picks which Index to Use ? • The constants in query texts matter a lot www.percona.com Performs dynamic picking for every query execution • by doing “dive” in the table Estimates number of rows it needs to access for given index • This is what ANALYZE TABLE updates Uses “Cardinality” statistics if impossible
-33. www.percona.com More on Picking the Index • Looking to minimize the “cost” not query performance Not Just minimizing number of scanned rows •PRIMARY Key is special for Innodb •Covering Index benefits •Full table scan is faster, all being equal •Can we also use index for Sorting Lots of other heuristics and hacks •Verify plan MySQL is actually using •Note it can change dynamically based on constants and data Things to know
-34. www.percona.com Use EXPLAIN • EXPLAIN is a great tool to see how MySQL plans to execute the query – http://dev.mysql.com/doc/refman/5.6/en/using-explain. html – Remember real execution might be different mysql> explain select max(season_nr) from title group by production_year; +----+-------------+-------+-------+---------------+-----------------+---------+------+------+--------------------------+ | id | select_type | table | type | possible_keys | key | key_len | ref | rows | Extra | +----+-------------+-------+-------+---------------+-----------------+---------+------+------+--------------------------+ | 1 | SIMPLE | title | range | NULL | production_year | 5 | NULL | 201 | Using index for group-by | +----+-------------+-------+-------+---------------+-----------------+---------+------+------+--------------------------+ 1 row in set (0.01 sec)
-35. www.percona.com Indexing Strategy • Look at them together not just one by one Build indexes for set of your performance critical queries • At least most selective parts are Best if all WHERE clause and JOIN clauses are using indexes for lookups • There are some exceptions Generally extend index if you can, instead of creating new indexes • Revisit Performance of All Queries! Validate performance impact as you’re doing changes
-36. www.percona.com MySQL 5.6 JSON EXPLAIN FORMAT mysql> EXPLAIN FORMAT=JSON SELECT * FROM t1 JOIN t2 ON t1.i = t2.i WHERE t1.j > 1 AND t2.j < 3; | { "query_block": { "select_id": 1, "nested_loop": [ { "table": { "table_name": "t1", "access_type": "ALL", "rows": 3, "filtered": 100, "attached_condition": "((`test`.`t1`.`j` > 1) and (`test`.`t1`.`i` is not null))" } /* table */ }, ….
-37. www.percona.com Indexing Strategy Example • SELECT * FROM TBL WHERE A=5 AND B=6 • SELECT * FROM TBL WHERE A>5 AND B=6 • KEY (B,A) Is better for such query mix Build Index order which benefits more queries • Do not start with this! All being equal put more selective key part first • Many indexes slow system down Do not add indexes for non performance critical queries
-38. www.percona.com Tools ? • Percona Toolkit – Pt-query-digest • Percona Cloud Tools – http://cloud.percona.com
-39. www.percona.com Trick #1: Enumerating Ranges • Assume we need to stick to this order KEY (A,B) • Will only use first key part of the index SELECT * FROM TBL WHERE A BETWEEN 2 AND 4 AND B=5 • Will use both key parts SELECT * FROM TBL WHERE A IN (2,3,4) AND B=5
-40. www.percona.com Trick #2: Adding Fake Filter KEY (GENDER,CITY) • Want to use one index only • Will not be able to use the index at all SELECT * FROM PEOPLE WHERE CITY=“NEW YORK” • Will be able to use the index SELECT * FROM PEOPLE WHERE GENDER IN (“M”,”F”) AND CITY=“NEW YORK” • Gender, Status, Boolean Types etc The trick works best with low selectivity columns.
-41. www.percona.com Trick #3: Unionizing Filesort KEY(A,B) • No Other key would work ether • Will not be able to use index for SORTING SELECT * FROM TBL WHERE A IN (1,2) ORDER BY B LIMIT 5; • Will use the index for Sorting. “filesort” will be needed only to sort over 10 rows. (SELECT * FROM TBL WHERE A=1 ORDER BY B LIMIT 5) UNION ALL (SELECT * FROM TBL WHERE A=2 ORDER BY B LIMIT 5) ORDER BY B LIMIT 5;
+MySQL Indexing
+
+BTREE - common type
+RTREE - MyISAM only (GIS)
+HASH Indexes - NDB, MEMORY
+FULLTEXT Indexes - MyISAM, InnoDB 5.6+
+
+What Operations can BTREE Index do ?
+- Find all rows with KEY=5 (lookup)
+- Find all rows with KEY>5 (open range)
+- Find all rows with 5<KEY<10 (closed range)
+
+String Indexes
+There is no difference
+- Sort order is defined for strings ("AAAA" < "AAAB")
+Prefix LIKE is a special type of Range
+- LIKE "ABC%" means "ABC[LOW]"<KEY<"ABC[HIGHEST]"
+- LIKE "%ABC" can't be optimized by use of the index
+
+Multiple Column Indexes
+Sort Order matters
+- (1,2,3) < (1,3,1)
+- KEY(col1,col2,col3)
+It is still one BTREE Index
+- Not a separate BTREE index for each level
+PK is implicitly appended to all indexes
+- KEY(column) is really KEY(column,ID) internally
+
+How MySQL Uses Indexes
+- Sorting
+- Data Lookups
+- Avoiding Reading
+- Special Optimizations
+
+Data Lookups
+The classical use of index on (LAST_NAME)
+- SELECT * FROM EMPLOYEES WHERE LAST_NAME="Smith"
+Can use multiple column indexes (DEPT,LAST_NAME)
+- SELECT * FROM EMPLOYEES WHERE LAST_NAME="Smith" AND DEPT="Accounting"
+
+Multiple Columns Index
+Index (A,B,C) - order of columns matters
+Will use Index
+- A>5
+- A=5 AND B>6
+- A=5 AND B=6 AND C=7
+- A=5 AND B IN (2,3) AND C>5
+Will NOT use Index
+- B>5 (leading column is not referenced)
+- B=6 AND C=7 (leading column is not referenced)
+Will use Part of the index
+- A>5 AND B=2 (range on 1st column, only use this key part)
+- A=5 AND B>6 AND C=2 (range on second column, use two parts)
+
+MySQL will stop using key parts in multi part index as soon as it met range (<,>,BETWEEN)
+It however is able to continue using key parts further to the right if IN(...) range is used
+
+Using Index for Sorting
+SELECT * FROM PLAYERS ORDER BY SCORE DESC LIMIT 10
+- Will use index on SCORE column
+- Without index MySQL will do "filesort" which is very expensive
+SELECT * FROM PLAYERS WHERE COUNTRY="US" ORDER BY SCORE DESC LIMIT 10
+- Best served by Index on (COUNTRY,SCORE)
+- Often combined with using Index for lookup
+KEY(A,B) - multi column index
+Will use Index for Sorting
+- ORDER BY A (sorting by leading column)
+- A=5 ORDER BY B (EQ filtering by 1st and sorting by 2nd)
+- ORDER BY A DESC, B DESC (sorting by 2 columns in same order)
+- A>5 ORDER BY A (range on the column, sorting on the same column)
+Will NOT use Index for Sorting
+- A IN(1,2) ORDER BY B (in-range on first column)
+- ORDER BY B (sorting by second column in the index)
+- ORDER BY A ASC, B DESC (sorting in the different order)
+- A>5 ORDER BY B (range on first column, sorting by second)
+
+You can't sort in different order by 2 columns
+You can only have equality comparison (=) for columns which are not part of ORDER BY
+
+Indexes and Joins
+MySQL Performs Joins as "Nested Loops"
+- SELECT * FROM POSTS,COMMENTS WHERE AUTHOR="John" AND COMMENTS.POST_ID=POSTS.ID
+- Scan table POSTS, then for every such post go to COMMENTS table to fetch all comments
+Index is only needed on table which is being looked up
+- Very important to have all JOINs Indexed
+- The index on POSTS.ID is not needed for this query performance
