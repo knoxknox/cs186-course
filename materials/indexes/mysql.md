@@ -15,7 +15,7 @@ There is no difference
 - Sort order is defined for strings ("AAA" < "AAB")
 
 Prefix LIKE is a special type of Range
-- LIKE "ABC%" means "ABC[LOW]" < KEY < "ABC[HIGHEST]"
+- LIKE "ABC%" means "ABC[LOW]" < KEY < "ABC[HIGH]"
 - LIKE "%ABC" cannot be optimized by use of the index
 
 ## Multiple Column Indexes
@@ -40,7 +40,7 @@ PK is implicitly appended to all indexes
 The classical use of index on (LAST_NAME)
 - SELECT * FROM EMPLOYEES WHERE LAST_NAME="Smith"
 
-Can use multiple column indexes (DEPT, LAST_NAME)
+Can use multiple column indexes (DEPT,LAST_NAME)
 - SELECT * FROM EMPLOYEES WHERE LAST_NAME="Smith" AND DEPT="Accounting"
 
 ## Multicolumn Index
@@ -61,11 +61,11 @@ Will use part of index
 - A=5 AND B>6 AND C=2 (range on second column, use two parts)
 
 MySQL will stop using key parts in multipart index as soon as it met range (>,<,BETWEEN)<br/>
-It however is able to continue using key parts further to the right if IN(.....) range is used
+It however is able to continue using key parts further to the right if IN(expression) range is used
 
 ## Using Indexes with Joins
 MySQL performs joins as "Nested Loops"
-- SELECT * FROM POSTS,COMMENTS WHERE AUTHOR="John" AND COMMENTS.POST_ID=POSTS.ID
+- SELECT * FROM POSTS,COMMENTS WHERE AUTHOR="John" USING(POST_ID)
 - Scan table POSTS, then for every such post go to COMMENTS table to fetch all comments
 
 Index is only needed on table which is being looked up
