@@ -95,3 +95,7 @@ KEY(A,B) will not use index for sorting
 
 You can't sort in different order by 2 columns<br/>
 You can only have eq comparison (=) for columns which are not part of ORDER BY
+
+**References:**
+- [explain output details](https://dev.mysql.com/doc/refman/5.7/en/explain-output.html)
+- [visualization of index structure](https://www.cs.usfca.edu/~galles/visualization/BPlusTree.html)
