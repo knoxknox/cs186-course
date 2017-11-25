@@ -65,7 +65,7 @@ It however is able to continue using key parts further to the right if IN(expres
 
 ## Using Indexes with Joins
 MySQL performs joins as "Nested Loops"
-- SELECT * FROM POSTS,COMMENTS WHERE AUTHOR="John" USING(POST_ID)
+- SELECT * FROM POSTS JOIN COMMENTS USING(POST_ID) WHERE AUTHOR="John"
 - Scan table POSTS, then for every such post go to COMMENTS table to fetch all comments
 
 Index is only needed on table which is being looked up
