@@ -142,3 +142,85 @@ Kinds of Database Files:
 - Sorted Files (pages & records are in sorted order)
 - Unordered Heap Files (records placed arbitrarily across pages)
 - Clustered Heap File and Hash Files (pages & records are grouped)
+
+Heap File:
+```
+    Header Page
+   -------------          Notes:
+   |xxxxxxxxxxx|          x - ref to data page
++--|xxxxxxxxxxx|          header page like a catalog for data pages
+|  -------------          header page include #free bytes on ref pages
++->|xxxxxxxxxxx|
++--|xxxxxxxxxxx| -- ref
+|  -------------    \
++->|xxxxxxxxxxx|     -----
+   |xxxxxxxxxxx|     | x | - data page
+   -------------     -----
+```
+
+Heap file allows to retrieve rows:
+- by scanning all records sequentially
+- by specifying the record id (page id + offset)
+- to fetch records by value - use indexes (dep='CS'; gpa>3 AND age=42)
+
+Page Layout:
+- fixed length records
+- variable length records
+
+```
+fixed length
+-------------------------------------
+| 11010000                          | - header
+| R > R > E > R > E > E > E > E     | - records
+-------------------------------------
+
+id - record number in page
+insert - find first empty slot in bitmap
+delete - clear bit from page header bitmap
+can contain: free space & number of records
+```
+
+```
+variable length
+-------------------------------------
+| R > R > E > R > ...               | - records
+| 18, 20, null, 24, FP          [3] | - slot-table
+-------------------------------------
+
+id - location in slot-table (from right)
+insert - add in a free space, create pointer in slot-table, update FP
+delete - set slot to null (empty slots will be reorganized via fragmentation)
+slot-table (18, 20, null, 24), ref to free space (FP), number of full slots ([3])
+```
+
+Record Layout:
+- fixed length format
+- variable length format
+
+```
+fixed length
+-----------------------------------------
+|   4 |       8 |   1 |   4 |         7 |
+-----------------------------------------
+|   3 |   3.142 |   T |   3 |   HELLO_W | - 24 bytes
+-----------------------------------------
+    int    double  bool   int     char(7)
+
+field types same for all records in file
+on disk byte representation same as in memory
+finding i-th field? fast - done via arithmetic
+```
+
+```
+variable length
+-------------------------------------------
+|   1 |    4 |       4 |     3 |        6 |
+-------------------------------------------
+|   M |   32 |   94000 |   Bob |   Market | - 18 bytes + header
+-------------------------------------------
+   char    int       int   vchar      vchar
+
+contains record header
+store information about variable lengths
+move all variable length fields to end (enable fast access)
+```
