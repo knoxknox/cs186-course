@@ -40,3 +40,44 @@ GROUP BY s.dept
 HAVING COUNT(*) >= 2
 ORDER BY s.dept DESC LIMIT 100;
 ```
+
+SQL Evaluation:
+```
+FROM              - compute cross product of tables
+ WHERE            - check conditions, discard tuples that fail
+  SELECT          - project away columns (just keep those used in SELECT, GROUP, HAVING)
+   GROUP BY       - form groups & aggregate (per group)
+    [HAVING]      - filter groups (only aggregate queries)
+     [DISTINCT]   - remove duplicate of rows before output
+```
+
+SQL Aggregation:
+```
+SELECT color, AVG(age) FROM boats GROUP by color HAVING COUNT(*) > 2
+--------------------------------------------------------------------
+tuples       group by       avg(), count()       having count(*) > 2
+--------------------------------------------------------------------
+   a 1            a 1              a 4.0 2                     b 4.3
+   b 3            a 7              b 4.3 3                     c 3.7
+   a 7            b 3              c 3.7 3
+   c 2            b 1
+   c 5            b 9
+   b 1            c 2
+   c 4            c 5
+   b 9            c 4
+--------------------------------------------------------------------
+```
+
+Set Semantics:
+```
+S = {a, a, b, b, b, c, e}
+R = {a, a, a, a, b, b, c, d}
+
+EXCEPT: {d}
+INTERSECT: {a, b, c}
+UNION: {a, b, c, d, e}
+
+EXCEPT ALL: {a, a, d}
+INTERSECT ALL: {a, a, b, b, c}
+UNION ALL: {a, a, a, a, a, a, b, b, b, b, b, c, c, d, e}
+```
