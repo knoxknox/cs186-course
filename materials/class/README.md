@@ -224,3 +224,27 @@ contains record header
 store information about variable lengths
 move all variable length fields to end (enable fast access)
 ```
+
+Cost of Operations:
+- R: number of records per block (=2)
+- B: number of data blocks in file (=5)
+
+Heap File
+-------------------------------
+| 2,5 | 1,6 | 4,7 | 3,9 | 8,9 |
+-------------------------------
+
+Sorted File
+-------------------------------
+| 1,3 | 3,1 | 5,4 | 7,5 | 9,8 |
+-------------------------------
+
+-------------------------------------------
+|                     Heap     Sorted     |
+-------------------------------------------
+| insert          |   2        logB+B     |
+| delete          |   B/2      logB+B     |
+| scan all        |   B        B          |
+| range search    |   B        logB+pages |
+| equality search |   B/2      logB       |
+-------------------------------------------
