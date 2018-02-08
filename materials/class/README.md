@@ -229,15 +229,15 @@ Cost of Operations:
 - R: number of records per block (=2)
 - B: number of data blocks in file (=5)
 
-Heap File
 ```
+Heap File
 -------------------------------
 | 2,5 | 1,6 | 4,7 | 3,9 | 8,9 |
 -------------------------------
 ```
 
-Sorted File
 ```
+Sorted File
 -------------------------------
 | 1,3 | 3,1 | 5,4 | 7,5 | 9,8 |
 -------------------------------
