@@ -244,15 +244,15 @@ Sorted File
 ```
 
 ```
--------------------------------------------
-|                     Heap     Sorted     |
--------------------------------------------
-| insert          |   2        logB+B     |
-| delete          |   B/2      logB+B     |
-| scan all        |   B        B          |
-| range search    |   B        logB+pages |
-| equality search |   B/2      logB       |
--------------------------------------------
+----------------------------------------------
+|                   Heap   Sorted    Index   |
+----------------------------------------------
+| insert          | O(1)   O(B)      O(logB) |
+| delete          | O(B)   O(B)      O(logB) |
+| scan all        | O(B)   O(B)      O(B)    |
+| range search    | O(B)   O(logB)   O(logB) |
+| equality search | O(B)   O(logB)   O(logB) |
+----------------------------------------------
 ```
 
 # Indexing
@@ -353,4 +353,38 @@ Should not rebalance tree
 +----+----+----+----+  +----+----+----+----+  +----+----+----+----+
 |    |    |    |    |->| 11 | 12 | 13 |    |->| 21 | 22 | 23 |    |
 +----+----+----+----+  +----+----+----+----+  +----+----+----+----+
+```
+
+Index Files:
+- clustered: record stored in index file <key, record>
+- unclustered: record not stored in index file <key, record_id>
+
+```
+              +-Page2-------+
+              | F | 002 | 1 | - root
+              | M | 199 | 3 |   (gender, page_id)
+              +-------------+
+             /               \
++-Page1------------+   +-Page3------------+
+| F | 002,Ann,140  |   | M | 199,Joe,380  | - leaves
+| F | 012,Jay,335  |   | M | 250,Jim,155  |   (gender, row)
+| F | 090,Mia,1200 |   | M | 278,Edd,9400 |
+| F | 234,Emma,650 |   | M | 279,John,350 |
++------------------+   +------------------+
+```
+
+```
+                  +-Page2-------+
+                  | F | 002 | 1 | - root
+                  | F | 359 | 3 |   (gender, page_id)
+                  | M | 008 | 4 |
+             _____| M | 199 | 5 |_____
+            /     +-------------+     \
+           /     /               \     \
++-Page1---+  +-Page3---+   +-Page4---+  +-Page5---+
+| F | 002 |  | F | 359 |   | M | 008 |  | M | 199 | - leaves
+| F | 012 |  | F | 750 |   | M | 028 |  | M | 250 |   (gender, row_id)
+| F | 090 |  | F | 820 |   | M | 135 |  | M | 278 |
+| F | 234 |  | F | 860 |   | M | 198 |  | M | 279 |
++---------+  +---------+   +---------+  +---------+
 ```
