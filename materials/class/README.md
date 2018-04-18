@@ -476,3 +476,7 @@ Apply merge, write to file: [1,1,3,4,5,6,6,7]
 Take 2 files (F5,F6): [2,3,4,4,6,7,8,9] [1,1,3,4,5,6,6,7]
 Apply merge, write to file: [1,1,2,3,3,4,4,4,5,6,6,6,7,7,8,9]
 ```
+
+# Relational Algebra
+
+Lecture materials can be found here: https://bit.ly/2H85yqO
