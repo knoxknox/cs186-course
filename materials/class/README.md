@@ -388,3 +388,91 @@ Should not rebalance tree
 |    |    |    |    |->| 11 | 12 | 13 |    |->| 21 | 22 | 23 |    |
 +----+----+----+----+  +----+----+----+----+  +----+----+----+----+
 ```
+
+# Hashing / Sorting
+
+External merge sort:
+- Assume we have: 10 MB RAM, 1000 MB data
+- Read in 10 MB at a time, sort it, write to disk (producing 100 files of 10 MB)
+- Merge 10 files of 10 MB together to make 100 MB, then merge 10 files of 100 MB
+
+```
+[3,4] [6,2] [9,4] [8,7] [5,6] [3,1] [7,4] [6,1] - input file
+8 pages with 2 records each; we have space only available for 2 pages
+
+ _1_______   _2_______   _3_______   _4_______
+|         | |         | |         | |         |
+[3,4] [6,2] [9,4] [8,7] [5,6] [3,1] [7,4] [6,1]   - select next 2 pages (buffer)
+                                                  - apply sort algorithm (quicksort)
+   [2,3]       [4,7]       [1,3]       [1,4]      - write sorted data result back to disk
+   [4,6]       [8,9]       [5,6]       [6,7]
+        \     /                 \     /           - merge data (see merge algo description)
+         [2,3]                   [1,1]
+         [4,4]                   [3,4]
+         [6,7]                   [5,6]
+         [8,9]                   [6,7]
+              \                 /
+               -----------------                  - now data is sorted on disk (all 8 pages)
+                     [1,1]
+                     [2,3]
+                     [3,4]
+                     [4,4]
+                     [5,6]
+                     [6,6]
+                     [7,7]
+                     [8,9]
+
+Merge files:
+1) Open 2 files
+2) Read 1 value from F1 & F2
+3) Compare F1.value with F2.value
+4) Write less value to new file F3
+5) Increment position in file where value is less
+6) Repeat step 3 until both iterators complete work
+
+Example of merge:
+F1 = [2,3,4,6]
+F2 = [4,7,8,9]
+
+I1=0, I2=0; V1=2, V2=4; (2 < 4); F3 = [2]
+I1=1, I2=0; V1=3, V2=4; (3 < 4); F3 = [2,3]
+I1=2, I2=0; V1=4, V2=4; (4 < 4); F3 = [2,3,4]
+I1=3, I2=0; V1=6, V2=4; (6 > 4); F3 = [2,3,4,4]
+I1=3, I2=1; V1=6, V2=7; (6 < 7); F3 = [2,3,4,4,6]
+I1=4, I2=1; V1=?, V2=7; (? < 7); F3 = [2,3,4,4,6,7]
+I1=4, I2=2; V1=?, V2=8; (? < 8); F3 = [2,3,4,4,6,7,8]
+I1=4, I2=3; V1=?, V2=9; (? < 9); F3 = [2,3,4,4,6,7,8,9]
+```
+
+Example:
+```
+Buffer: 4 elements
+
+
+Take 2 pages: [3,4] [6,2]
+Sort in memory: [2,3] [4,6]
+Write back to disk: file1 = [2,3] [4,6]
+
+Take 2 pages: [9,4] [8,7]
+Sort in memory: [4,7] [8,9]
+Write back to disk: file2 = [4,7] [8,9]
+
+Take 2 pages: [5,6] [3,1]
+Sort in memory: [1,3] [5,6]
+Write back to disk: file3 = [1,3] [5,6]
+
+Take 2 pages: [7,4] [6,1]
+Sort in memory: [1,4] [6,7]
+Write back to disk: file4 = [1,4] [6,7]
+
+
+Take 2 files (F1,F2): [2,3,4,6] [4,7,8,9]
+Apply merge, write to file: [2,3,4,4,6,7,8,9]
+
+Take 2 files (F3,F4): [1,3,5,6] [1,4,6,7]
+Apply merge, write to file: [1,1,3,4,5,6,6,7]
+
+
+Take 2 files (F5,F6): [2,3,4,4,6,7,8,9] [1,1,3,4,5,6,6,7]
+Apply merge, write to file: [1,1,2,3,3,4,4,4,5,6,6,6,7,7,8,9]
+```
