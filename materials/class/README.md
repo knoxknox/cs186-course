@@ -480,7 +480,7 @@ Lecture materials can be found here: https://bit.ly/2H85yqO
 
 # Joins
 
-Types:
+Algorithms:
 - hash join
   - index type => hash table
   - special case of index nested-loop
