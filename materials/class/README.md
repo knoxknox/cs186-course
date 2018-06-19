@@ -477,3 +477,72 @@ Apply merge, write to file: [1,1,2,3,3,4,4,4,5,6,6,6,7,7,8,9]
 # Relational Algebra
 
 Lecture materials can be found here: https://bit.ly/2H85yqO
+
+# Joins
+
+Types:
+- hash join
+  - index type => hash table
+  - special case of index nested-loop
+- sort-merge join
+  - can use not only equi operator
+  - can be used with large data-sets
+- nested-loop join
+  - can always be applied
+  - complexity = [R x S] => O(n * n)
+- index nested-loop
+  - index type => any index (like b-tree)
+  - index should be build on one of compared attrs
+
+hash
+```
+JP(r, s) = (r.x == s.x)
+
+join(R, S, JP(r, s))
+  index = hash_table(R.x)
+
+  foreach s in S
+    hash_key = hash(s.x)
+    result = index.get(hash_key)
+    output([r, s]) if result.present?
+```
+
+sort-merge
+```
+JP(r, s) = (r.x == s.x)
+
+join(R, S, JP(r, s))
+  sort(R on R.x)
+  sort(S on S.x)
+  pointer pr = r[0]
+  pointer ps = s[0]
+  do
+    if pr.x == ps.x
+      output([pr, ps])
+    pr.x <= ps.x ? pr++ : ps++
+  while pr != R.end && ps != S.end
+```
+
+nested-loop
+```
+JP(r, s) = (r.x == s.x)
+GT(r, s) = (r.x >= s.x)
+LT(r, s) = (r.x <= s.x)
+
+join(R, S, JP(r, s))
+  foreach r in R
+    foreach s in S
+      output([r, s]) if JP(r, s)
+```
+
+index nested-loop
+```
+JP(r, s) = (r.x == s.x)
+
+join(R, S, JP(r, s))
+  index = catalog.get(indexes, R.x)
+
+  foreach s in S
+    result = index.get(s.x)
+    output([r, s]) if result.present?
+```
