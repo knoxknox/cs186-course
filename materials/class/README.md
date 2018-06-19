@@ -5,12 +5,9 @@
 3. Indexing
 4. Hashing / Sorting
 5. Relational Algebra
-6. Query Optimization
-7. DB Design
+6. Joins
+7. Concurrency
 8. Transactions
-9. Concurrency
-10. Recovery
-11. Distribution
 
 # SQL
 
