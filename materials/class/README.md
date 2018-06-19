@@ -491,7 +491,7 @@ Types:
   - can always be applied
   - complexity = [R x S] => O(n * n)
 - index nested-loop
-  - index type => any index (like b-tree)
+  - index type => any index (like b-tree, etc..)
   - index should be build on one of compared attrs
 
 hash
@@ -545,4 +545,44 @@ join(R, S, JP(r, s))
   foreach s in S
     result = index.get(s.x)
     output([r, s]) if result.present?
+```
+
+Join Types:
+```
+------------------------------users-     ------------------------------orders-
+| id | name                        |     | id | user_id |        payment_sum |
+------------------------------------     -------------------------------------
+|  1 | George Washington           |     |  1 |       1 |             234.56 |
+|  2 | John Adams                  |     |  2 |       3 |              78.50 |
+|  3 | Thomas Jefferson            |     |  3 |       2 |             124.00 |
+|  4 | James Madison               |     |  4 |       3 |              65.50 |
+|  5 | James Monroe                |     |  5 |       7 |              25.50 |
+|    |                             |     |  6 |       9 |              14.40 |
+------------------------------------     -------------------------------------
+
+
+
+FULL JOIN                                INNER JOIN
+select * from users full join orders     select * from users inner join orders
+------------------------------------     -------------------------------------
+| George Washington    | $234.56 |1|     | George Washington     | $234.56 |1|
+| Thomas Jefferson     |  $78.50 |3|     | John Adams            | $124.00 |2|
+| John Adams           | $124.00 |2|     | Thomas Jefferson      |  $78.50 |3|
+| Thomas Jefferson     |  $65.50 |3|     | Thomas Jefferson      |  $65.50 |3|
+| NULL                 |  $25.50 |0|     -------------------------------------
+| NULL                 |  $14.40 |0|
+| James Madison        |    NULL |4|
+| James Monroe         |    NULL |5|
+------------------------------------
+
+LEFT JOIN                                RIGHT JOIN
+select * from users left join orders     select * from users right join orders
+------------------------------------     -------------------------------------
+| George Washington    | $234.56 |1|     | George Washington     | $234.56 |1|
+| John Adams           | $124.00 |2|     | Thomas Jefferson      |  $78.50 |3|
+| Thomas Jefferson     |  $78.50 |3|     | John Adams            | $124.00 |2|
+| Thomas Jefferson     |  $65.50 |3|     | Thomas Jefferson      |  $65.50 |3|
+| James Madison        |    NULL |4|     | NULL                  |  $25.50 |0|
+| James Monroe         |    NULL |5|     | NULL                  |  $14.40 |0|
+------------------------------------     -------------------------------------
 ```
