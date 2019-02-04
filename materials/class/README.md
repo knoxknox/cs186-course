@@ -586,3 +586,46 @@ select * from users left join orders     select * from users right join orders
 | James Monroe         |    NULL |5|     | NULL                  |  $14.40 |9|
 ------------------------------------     -------------------------------------
 ```
+
+# Transactions
+
+Transaction:
+- Smallest unit of execution of database operations
+- Transaction executes completely or nothing executes
+- Transaction ends in one of two ways: abort or commit
+
+ACID properties:
+- Atomicity: executes all operations or none of them
+- Isolation: execution of each transaction is isolated from that of other transaction
+- Consistency: db starts out consistent and it ends up consistent at the end of transaction
+- Durability: changes to db must be present (no matter what happens) after transaction commit
+
+Transaction properties:
+- Atomicity: implemented by logging (see durability)
+- Isolation: implemented by synchronization methods (locks)
+- Consistency: this is an intrinsic property of a transaction
+- Durability: implemented by logging (undo/redo, append only)
+
+Recovery (Write-Ahead Log):
+- redo all updates made by the committed transactions
+- undo all updates made by the uncommitted transactions
+
+```
+-----------------------------------------------------------------------------------------
+|              ---- -buf---- -disk---                                                   |
+|             |  x |  a   b |  a   b |  WAL                                             |
+-----------------------------------------------------------------------------------------
+| init        | -- | --  -- | 10  20 |  mem: start(tid)                                 |
+| x = read(a) | 10 | 10     | 10  20 |  -                                               |
+| x = x + 1   | 11 | 10     | 10  20 |  -                                               |
+| write(x, a) | 11 | 11     | 10  20 |  mem: <tid, a, 10, 11>                           |
+| x = read(b) | 20 |     20 | 10  20 |  -                                               |
+| x = x - 1   | 19 |        | 10  20 |  -                                               |
+| write(x, b) | 19 |     19 | 10  20 |  mem: <tid, b, 20, 19>                           |
+| flush       |    |        | 10  20 |  disk: start, <tid, a, 10, 11>, <tid, b, 20, 19> |
+| output(a)   |    | 11     | 11  20 |  -                                               |
+| commit      |    |        | 11  20 |  mem: commit                                     |
+| flush       |    |        | 11  20 |  disk: commit                                    |
+| output(b)   |    |     19 | 11  19 |  -                                               |
+-----------------------------------------------------------------------------------------
+```
