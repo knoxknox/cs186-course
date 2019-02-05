@@ -658,8 +658,8 @@ As result: record in transaction B is now dirty (after read)
 ```
 ```
 Non-Repeatable Read:
-Occurs, when during the course of a transaction, a row is
-retrieved twice and the values within the row differ between reads
+Occurs, when during the course of a transaction,
+a row is retrieved twice and the values within the row differ between reads
 
 A                                 B
 |                                 |
