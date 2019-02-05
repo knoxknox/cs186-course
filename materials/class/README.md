@@ -641,13 +641,49 @@ Transaction isolation levels:
 -------------------------------------------------------------------------
 ```
 
-Problems:
-- Dirty Read happens when transaction reads other uncommited transaction
-- Phantom Read occurs when, in the course of a transaction, new rows are added by another transaction to the records being read
-- Non-Repeatable Read occurs, when during the course of a transaction, a row is retrieved twice and the values within the row differ between reads
+```
+Dirty Read:
+Happens when transaction reads other uncommited transaction
 
-Isolation levels:
-- Serializable (3) read and write locks (on selected data), and also range-locks must be acquired (when a select query uses a ranged where)
-- Repeatable read (2) it will prevent non-repeatable reads; keeps read and write locks until the end of the transaction, but range-locks are not managed
-- Read committed (1) in this isolation level, it ensure that we only read committed data
-- Read uncommitted (0) allows dirty-reads, but it has an advantage of performance, because it avoids acquire and release locks
+A                                 B
+|                                 |
+| write(where x=1)                |
+|                                 |
+|                                 | read(where x=1)
+|                                 |
+| rollback transaction            |
+|                                 |
+
+As result: record in transaction B is now dirty (after read)
+```
+```
+Non-Repeatable Read:
+Occurs, when during the course of a transaction, a row is
+retrieved twice and the values within the row differ between reads
+
+A                                 B
+|                                 |
+| read(where x=1)                 |
+|                                 | write(where x=1)
+|                                 | commit
+|                                 |
+| read(where x=1)                 |
+|                                 |
+
+As result: transaction A might get a record with different values between reads
+```
+```
+Phantom Read:
+Occurs, when new rows are added by another transaction to the records being read
+
+A                                 B
+|                                 |
+| read(where x in 10..20)         |
+|                                 | write(where x=15)
+|                                 | commit
+|                                 |
+| read(where x in 10..20)         |
+|                                 |
+
+As result: resulted rows fetched in transaction A may be different in both reads
+```
