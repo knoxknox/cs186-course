@@ -595,16 +595,16 @@ Transaction:
 - Transaction ends in one of two ways: abort or commit
 
 ACID properties:
-- Atomicity: executes all operations or none of them
+- Atomicity: all actions of the transaction are executed or none
+- Consistency: transaction must not violate consistency at commit time
 - Isolation: execution of each transaction is isolated from that of other transaction
-- Consistency: db starts out consistent and it ends up consistent at the end of transaction
 - Durability: changes to db must be present (no matter what happens) after transaction commit
 
 Transaction properties:
-- Atomicity: implemented by logging (see durability)
-- Isolation: implemented by synchronization methods (locks)
+- Atomicity: implemented by logging
 - Consistency: this is an intrinsic property of a transaction
-- Durability: implemented by logging (undo/redo, append only)
+- Isolation: implemented by synchronization methods => locking
+- Durability: implemented by logging (undo/redo, append only log)
 
 Recovery (Write-Ahead Log):
 - redo all updates made by the committed transactions
@@ -629,3 +629,25 @@ Recovery (Write-Ahead Log):
 | output(b)   |    |     19 | 11  19 |  -                                               |
 -----------------------------------------------------------------------------------------
 ```
+
+Transaction isolation levels:
+```
+-------------------------------------------------------------------------
+|                  | Dirty Reads | Non-Repeatable Reads | Phantom Reads |
+| Serializable     |      -      |           -          |       -       |
+| Repeatable read  |      -      |           -          |       +       |
+| Read committed   |      -      |           +          |       +       |
+| Read uncommitted |      +      |           +          |       +       |
+-------------------------------------------------------------------------
+```
+
+Problems:
+- Dirty Read happens when transaction reads other uncommited transaction
+- Phantom Read occurs when, in the course of a transaction, new rows are added by another transaction to the records being read
+- Non-Repeatable Read occurs, when during the course of a transaction, a row is retrieved twice and the values within the row differ between reads
+
+Isolation levels:
+- Serializable (3) read and write locks (on selected data), and also range-locks must be acquired (when a select query uses a ranged where)
+- Repeatable read (2) it will prevent non-repeatable reads; keeps read and write locks until the end of the transaction, but range-locks are not managed
+- Read committed (1) in this isolation level, it ensure that we only read committed data
+- Read uncommitted (0) allows dirty-reads, but it has an advantage of performance, because it avoids acquire and release locks
