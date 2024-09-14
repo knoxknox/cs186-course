@@ -631,13 +631,13 @@ Recovery (Write-Ahead Log):
 
 Transaction isolation levels:
 ```
--------------------------------------------------------------------------
-|                  | Dirty Reads | Non-Repeatable Reads | Phantom Reads |
-| Serializable     |      -      |           -          |       -       |
-| Repeatable read  |      -      |           -          |       +       |
-| Read committed   |      -      |           +          |       +       |
-| Read uncommitted |      +      |           +          |       +       |
--------------------------------------------------------------------------
+----------------------------------------------------------------------------
+|                     | Dirty Reads | Non-Repeatable Reads | Phantom Reads |
+| 3) Serializable     |      -      |           -          |       -       |
+| 2) Repeatable read  |      -      |           -          |       +       |
+| 1) Read committed   |      -      |           +          |       +       |
+| 0) Read uncommitted |      +      |           +          |       +       |
+----------------------------------------------------------------------------
 ```
 
 ```
