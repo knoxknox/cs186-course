@@ -1,13 +1,12 @@
 # Notes
 
-1. SQL
-2. Files / Buffers
-3. Indexing
-4. Hashing / Sorting
-5. Relational Algebra
-6. Joins
-7. Concurrency
-8. Transactions
+1. [SQL](#sql)
+2. [Files / Buffers](#files--buffers)
+3. [Indexing](#indexing)
+4. [Hashing / Sorting](#hashing--sorting)
+5. [Relational Algebra](#relational-algebra)
+6. [Joins](#joins)
+7. [Transactions](#transactions)
 
 # SQL
 
