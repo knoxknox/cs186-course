@@ -629,6 +629,49 @@ Recovery (Write-Ahead Log):
 -----------------------------------------------------------------------------------------
 ```
 
+Lock manager and lock types:
+- Hash table with separate chaining
+- Each value is a linked list of locked objects
+- Each locked object contains a list of granted/waiting transactions
+- Every new lock request will be added to the end of the waiting transactions
+
+```
+   ------------------
+   | Lock Table     |
+   ------------------
++--| 0: Linked List |
+|  | 1: Linked List |
+|  | ...            |
+|  | N: Linked List |
+|  ------------------
+|
+|  ---------------------              ---------------------
++->| A (locked object) |------------->| B (locked object) |
+   ---------------------              ---------------------
+   |                                  |
+   -A----------------------------     -B----------------------------
+   | Mode: X                    |     | Mode: S                    |
+   | Granted: T2                |     | Granted: T4, T5            |
+   | Wait Queue: T1(X) -> T3(S) |     | Wait Queue: T6(X) -> T7(X) |
+   ------------------------------     ------------------------------
+```
+```
+Mode:
+- S (shared lock): multiple transactions can read the same data, transactions can't modify this data
+- X (exclusive lock): allows a transaction to modify the data, prevents other transactions to read/modify
+```
+```
+Optimistic lock:
+- Assumes that conflicts are rare
+- Allows multiple users to access the same record for edits
+- Uses a version number or timestamp to detect if the data has been changed (ex: lock_version)
+
+Pessimistic lock:
+- Assumes that conflicts are frequent
+- Prevents other transactions from accessing/modifying the data until current transaction complete
+- Uses constructions like `SELECT..FOR SHARE` for shared lock and `SELECT..FOR UPDATE` for exclusive lock
+```
+
 Transaction isolation levels:
 ```
 ----------------------------------------------------------------------------
