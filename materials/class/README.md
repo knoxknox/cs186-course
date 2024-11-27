@@ -3,7 +3,7 @@
 1. [SQL](#sql)
 2. [Files / Buffers](#files--buffers)
 3. [Indexing](#indexing)
-4. [Hashing / Sorting](#hashing--sorting)
+4. [Sorting / Hashing](#sorting--hashing)
 5. [Relational Algebra](#relational-algebra)
 6. [Joins](#joins)
 7. [Transactions](#transactions)
@@ -385,7 +385,7 @@ Should not rebalance tree
 +----+----+----+----+  +----+----+----+----+  +----+----+----+----+
 ```
 
-# Hashing / Sorting
+# Sorting / Hashing
 
 External merge sort:
 - Assume we have: 10 MB RAM, 1000 MB data
